@@ -227,7 +227,7 @@ def makeWin():
                  "#888888",
                  "#999999"]
 
-    COLORS=COLORS_GREY
+    COLORS=COLORS_BLUEISH
 
     # sort points
     points=[]
@@ -298,7 +298,7 @@ def fireworkSearch(win):
                    "grey",
                    "pink"]
                    
-    CRAWLER_COLORS=COLORS_BRIGHT
+    CRAWLER_COLORS=COLORS_WHITE
 
     # P H A S E 1
     print("PHASE1")
