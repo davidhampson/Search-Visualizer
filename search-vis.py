@@ -2,7 +2,6 @@
 
 import random
 from graphics import *
-from math import ceil
 from tkinter import Tk
 
 ## G L O B A L S ## (passed to all methods)
@@ -253,7 +252,7 @@ def makeWin():
     points.sort(key=lambda x: l[x[0]][x[1]])
     
     # Get color codes in dec
-    c_CONV=65535/256
+    c_CONV=65535/255
     COLORS=list(map(lambda x: [win.winfo_rgb(x)[0]//c_CONV,
                                win.winfo_rgb(x)[1]//c_CONV,
                                win.winfo_rgb(x)[2]//c_CONV],
@@ -310,11 +309,11 @@ def makeWin():
                     b1=color1[2]
                     b2=color2[2]
                     
-                    # get ratio, make sure it doesn't touch 256
+                    # get ratio
                     ratio=num-int(num)
-                    rN = min(int((1-ratio)*r1 + (ratio)*r2),255) 
-                    gN = min(int((1-ratio)*g1 + (ratio)*g2),255)
-                    bN = min(int((1-ratio)*b1 + (ratio)*b2),255)
+                    rN = int((1-ratio)*r1 + (ratio)*r2) 
+                    gN = int((1-ratio)*g1 + (ratio)*g2)
+                    bN = int((1-ratio)*b1 + (ratio)*b2)
 
                     color="#{0:02x}{1:02x}{2:02x}".format(rN,gN,bN,2)
                 
