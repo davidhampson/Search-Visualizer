@@ -2,6 +2,8 @@
 
 import random
 from graphics import *
+from math import ceil
+from tkinter import Tk
 
 ## G L O B A L S ## (passed to all methods)
 SIZE=0 # data points is SIZE*SIZE
@@ -18,10 +20,16 @@ BEST=[0,0,99999999] # best found [x,y,v]
 
 
 def getVal(): # top left cell
-    return random.uniform(-10,10)
+    return 0
+
 
 def getVar(variant): # variant in cells
+    return random.normalvariate(0,10)
+
+""" uniform distribution
+def getVar(variant):
     return random.uniform(-10,10) + variant # VARIANT (comment out + variant to do without)
+"""
 
 class Crawler(): # used for search algo
     def __init__(self, greed, x, y):
@@ -79,7 +87,8 @@ class Crawler(): # used for search algo
 
             
 def makeData(): # generate discrete SIZExSIZE floating point array
-    global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, crawler_hist, minimum, maximum
+    global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, \
+    crawler_hist, minimum, maximum
 
     # size
     while True:
@@ -96,7 +105,9 @@ def makeData(): # generate discrete SIZExSIZE floating point array
     # resolution
     while True:
         try:
-            RESOLUTION=int(input("Resolution(recomended 4): ")) #this number of points per pixel
+            RESOLUTION=int(input("Resolution(recomended 4) \
+\n(each pixel represents RESOLUTION*RESOLUTION data points): "))
+            
             if RESOLUTION < 1:
                 raise
             break
@@ -151,16 +162,6 @@ def makeData(): # generate discrete SIZExSIZE floating point array
                 print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
             x+=1
 
-            # VARIANT
-            s = random.randint(0,100)
-            if s >= 0 and s < 5:
-                variant = 10
-            elif s >= 10 and s < 15:
-                variant = -10
-            elif s >= 20 and s < 25:
-                variant = 0
-            ######
-
             # top left
             if i == 0 and j == 0:
                 l[i][j] = getVal()
@@ -188,7 +189,8 @@ def makeData(): # generate discrete SIZExSIZE floating point array
 
 # Populates window with data points, returns win object
 def makeWin():
-    global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, crawler_hist, minimum, maximum
+    global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, \
+    crawler_hist, minimum, maximum
 
     win = GraphWin("Search-Visualizer",WINSIZE,WINSIZE)
 
@@ -227,8 +229,21 @@ def makeWin():
                  "#888888",
                  "#999999"]
 
-    COLORS=COLORS_BLUEISH
+    COLORS_MORDOR=["#000000",
+                 "#FF0000",
+                 "#555555",
+                 "#990033",
+                 "#FFCC00",
+                 "#FFFF66"]
 
+    COLORS_NEBULA=["#FFFFFF",
+                   "#000000",
+                   "#FF00FF"]
+
+    
+    COLORS=COLORS_MORDOR
+    GRADIENT=True
+       
     # sort points
     points=[]
     for i in range(SIZE):
@@ -236,23 +251,73 @@ def makeWin():
             points.append([i,j])
             
     points.sort(key=lambda x: l[x[0]][x[1]])
-
+    
+    # Get color codes in dec
+    c_CONV=65535/256
+    COLORS=list(map(lambda x: [win.winfo_rgb(x)[0]//c_CONV,
+                               win.winfo_rgb(x)[1]//c_CONV,
+                               win.winfo_rgb(x)[2]//c_CONV],
+                    COLORS))
+    
     for p in points:
     #for i in range(len(l)):
         #for j in range(len(i[l])):
             i=p[0]
             j=p[1]
             x+=1
+            
             if (x%(SIZE*SIZE/10) == 0):
                 print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
-                
+          
             if i%RESOLUTION==0 and j%RESOLUTION==0:
     
-                # color it based on value
-                num=(l[i][j]-minimum)/(maximum-minimum) #0-1
-                # num=str(int((l[i][j]-minimum)/((maximum-minimum))*100))[:1]
-                color=COLORS[round(num*len(COLORS)-1)]
+                # color it based on average value of square
+                cellVal=l[i][j]
+                
+                if not RESOLUTION==1:
+                    cellVal=0
 
+                    # make sure we don't go off the edge
+                    sample=min(SIZE-i-1,SIZE-j-1,RESOLUTION)
+                        
+                    for q in range(sample):
+                        for w in range(sample):
+                            cellVal += l[i+q][j+w]
+
+                    cellVal /= sample**2
+                    
+                # 0 to 1 (doesn't touch 1)
+                num=(cellVal-minimum)/(maximum-minimum+0.001)
+                
+                # num=str(int((l[i][j]-minimum)/((maximum-minimum))*100))[:1]
+                
+                if not GRADIENT:
+                    num *=len(COLORS)
+                    color=COLORS[int(num)]
+                    
+                elif GRADIENT:
+
+                    num *= (len(COLORS)-1)
+
+                    color1=COLORS[int(num)]
+                    color2=COLORS[int(num)+1]
+
+                    # components
+                    r1=color1[0]
+                    r2=color2[0]
+                    g1=color1[1]
+                    g2=color2[1]
+                    b1=color1[2]
+                    b2=color2[2]
+                    
+                    # get ratio, make sure it doesn't touch 256
+                    ratio=num-int(num)
+                    rN = min(int((1-ratio)*r1 + (ratio)*r2),255) 
+                    gN = min(int((1-ratio)*g1 + (ratio)*g2),255)
+                    bN = min(int((1-ratio)*b1 + (ratio)*b2),255)
+
+                    color="#{0:02x}{1:02x}{2:02x}".format(rN,gN,bN,2)
+                
                 if RESOLUTION==1:
                     win.plot(i,j,color)
                     #win.plot(i,j, "#"+num*6)
@@ -273,7 +338,8 @@ def makeWin():
 
 # Search algorithm, uses global l
 def fireworkSearch(win):
-    global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, crawler_hist, minimum, maximum
+    global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, \
+    crawler_hist, minimum, maximum
     
     # COLORS
     #   PHASE 1
@@ -409,7 +475,7 @@ def fireworkSearch(win):
 
     print(SEARCH,"points searched,",str((SEARCH/(SIZE*SIZE))*100)[:3]+"% of points.")
 
-    input("Done.")
+    print("Done.")
 
 
 # Writes data in csv format
