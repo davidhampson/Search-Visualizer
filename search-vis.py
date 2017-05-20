@@ -145,7 +145,7 @@ def makeData(): # generate discrete SIZExSIZE floating point array
     l3=[] # N->S
     l4=[] # NE->SW
     
-    PLANES=[l1]
+    PLANES=[l1,l2,l3,l4]
     y=0 # count how many we have drawn
 
     for i in range(SIZE):
@@ -173,7 +173,7 @@ def makeData(): # generate discrete SIZExSIZE floating point array
         for j in range(SIZE):
 
             # progress bar
-            if (x%(SIZE*SIZE//5) == 0):
+            if (x%(SIZE*SIZE/10) == 0):
                 print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
             x+=1
 
@@ -408,7 +408,7 @@ def makeWin():
                    "#FF00FF"]
 
     
-    COLORS=COLORS_NEBULA
+    COLORS=COLORS_BLUEISH
     GRADIENT=True
 
     # Get color codes in dec
@@ -479,11 +479,17 @@ def makeWin():
 #    SHUFFLE_CHUNKS=False
 #    anim_list=["RADIAL"]*(CHUNKS-1)+["RANDOM"]
 ######### Scanner
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE="VALUE"
+#    CHUNKS=20
+#    SHUFFLE_CHUNKS=False
+#    anim_list=["CROSS","CROSS_REV"]*(CHUNKS//2+1)
+######### ENHANCE!
     PRESORT=True # sort the points before breaking them up
-    PRESORT_TYPE="VALUE"
+    PRESORT_TYPE="VALUE_REV"
     CHUNKS=20
     SHUFFLE_CHUNKS=False
-    anim_list=["CROSS","CROSS_REV"]*(CHUNKS//2+1)
+    anim_list=["RADIAL"]*CHUNKS
 ######### Classic
 #    PRESORT=False # sort the points before breaking them up
 #    PRESORT_TYPE="DEFAULT"
@@ -493,7 +499,7 @@ def makeWin():
 ######### RANDOM
 #    PRESORT=True # sort the points before breaking them up
 #    PRESORT_TYPE=random.choice(list(ANIMATIONS.keys()))
-#    CHUNKS=random.randint(1,30)
+#    CHUNKS=random.randint(1,100)
 #    SHUFFLE_CHUNKS=True
 #    anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)]
 
