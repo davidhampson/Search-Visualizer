@@ -1,34 +1,41 @@
 # David Hampson 5/18/2017
+# TODO: make winsize a feature
+
 
 import random
 from graphics import *
 from tkinter import Tk
 
 ## G L O B A L S ## (passed to all methods)
+
+    ## WINDOW STUFF
 SIZE=0 # data points is SIZE*SIZE
 WINSIZE=0 # same as size right now
 RESOLUTION=0 # data points per pixel
+    #########
+
+    ## DISCRETE PLANE
 l=[] # data points
+    #########
+
+    ## STATS
 SEARCH=0 # points searched, same as sum of crawler_hist
 crawler_hist=[] # searched points by number of searches
-minimum=99**99 # lowest value in l
-maximum=-99**99  # highest value in l
-GLOBALMIN=[0,0,9999999] # mimimum with pos [x,y,v]
-BEST=[0,0,99999999] # best found [x,y,v]
+minimum=0 # lowest value in l
+maximum=0  # highest value in l
+GLOBALMIN=[0,0,0] # mimimum with pos [x,y,v]
+BEST=[0,0,99**99] # best found [x,y,v]
+    ########
+
 ####################
 
 
 def getVal(): # top left cell
-    return random.uniform(0,10)
+    return random.uniform(-10,10)
 
-
-def getVar(variant): # variant in cells
-    return random.normalvariate(0,10)
-
-""" uniform distribution
-def getVar(variant):
-    return random.uniform(-10,10) + variant # VARIANT (comment out + variant to do without)
-"""
+def getVar(): #uniform distribution
+    #return random.normalvariate(0,10)
+    return random.uniform(-10,10)
 
 class Crawler(): # used for search algo
     def __init__(self, greed, x, y):
@@ -84,7 +91,6 @@ class Crawler(): # used for search algo
             self.x = lookx
             self.y = looky
 
-            
 def makeData(): # generate discrete SIZExSIZE floating point array
     global SIZE, WINSIZE, l, SEARCH, GLOBALMIN, BEST, RESOLUTION, \
     crawler_hist, minimum, maximum
@@ -99,7 +105,8 @@ def makeData(): # generate discrete SIZExSIZE floating point array
         except:
             print("Positive integers only.")
 
-    WINSIZE=SIZE
+    if not WINSIZE:
+        WINSIZE=SIZE
 
     # resolution
     while True:
@@ -117,8 +124,9 @@ def makeData(): # generate discrete SIZExSIZE floating point array
     while True:
         try:
             SEED=input("SEED(blank for random): ")
+
             if SEED=="":
-                SEED=random.random()*100
+                SEED=int(random.random()*1000000)
                 
             random.seed(SEED)
             
@@ -130,23 +138,71 @@ def makeData(): # generate discrete SIZExSIZE floating point array
     # create arrays
     
     print("Creating empty matrices",end="...")
+    num_of_planes=0
+
+    l1=[] # W->E
+    l2=[] # NW->SE
+    l3=[] # N->S
+    l4=[] # NE->SW
+    
+    PLANES=[l1]
+    y=0 # count how many we have drawn
 
     for i in range(SIZE):
         row = []
         for i in range(SIZE):
             row.append(0)
         l.append(row[:])
+        for p in PLANES:
+            p.append(row[:])
         crawler_hist.append(row[:])
     print("Done.")
 
 
-
     # populate
-    print("Populating discrete plane",end="...")
     x=0 # progress
-    variant=0 # VARIANT
     
+    #l1
     for i in range(SIZE):
+        if i==0:
+            if not l1 in PLANES:
+                break
+            y+=1
+            print("\nPopulating discrete plane("+str(y)+"/"+str(len(PLANES))+")",end="...")
+
+        for j in range(SIZE):
+
+            # progress bar
+            if (x%(SIZE*SIZE//5) == 0):
+                print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
+            x+=1
+
+
+            # top corner
+            if i == 0 and j == 0:
+                l1[i][j] = getVal()
+
+            # top row
+            elif j > 0 and i == 0:
+                l1[i][j] = l1[i][j-1] + getVar()
+            else:
+                if j < SIZE-1: 
+                    #l[i][j] = (l[i-1][j-1] + l[i-1][j] + l[i-1][j+1] + l[i][j-1])/4 + getVar() #include influence from left
+                    l1[i][j] = (l1[i-1][j-1] + l1[i-1][j] + l1[i-1][j+1])/3 + getVar()
+
+                elif j == SIZE-1: # wrap around on right edge (0 does it for us with -1)
+                    l1[i][j] = (l1[i-1][j-1] + l1[i-1][j] + l1[i-1][0])/3 + getVar()
+
+
+    #l2
+    for i in range(SIZE):
+        if i==0:
+            if not l2 in PLANES:
+                break
+            y+=1
+            print("\nPopulating discrete plane("+str(y)+"/"+str(len(PLANES))+")",end="...")
+            x=0
+
         for j in range(SIZE):
 
             # progress bar
@@ -154,29 +210,146 @@ def makeData(): # generate discrete SIZExSIZE floating point array
                 print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
             x+=1
 
-            # top left
+            # top corner
             if i == 0 and j == 0:
-                l[i][j] = getVal()
+                l2[i][j] = getVal()
 
             #edges
-            if i == 0 and j > 0:
-                l[i][j] = l[i][j-1] + getVar(variant)
-            if i > 0 and j == 0:
-                l[i][j] = l[i-1][j] + getVar(variant)
+            elif i == 0 and j > 0:
+                l2[i][j] = l2[i][j-1] + getVar()
+            elif i > 0 and j == 0:
+                l2[i][j] = l2[i-1][j] + getVar()
 
             # everything else  
             else:
-                l[i][j] = ((l[i-1][j] + l[i][j-1])/2 + getVar(variant))
+                l2[i][j] = ((l2[i-1][j] + l2[i][j-1])/2 + getVar())
 
+    #l3
+    for j in range(SIZE):
+        if j==0:
+            if not l3 in PLANES:
+                break
+            y+=1
+            print("\nPopulating discrete plane("+str(y)+"/"+str(len(PLANES))+")",end="...")
+            x=0
+        for i in range(SIZE):
 
-            # stats
-            minimum = min(minimum, l[i][j])
-
-            if minimum < GLOBALMIN[2]:
-                GLOBALMIN=[i,j,l[i][j]]
-                
-            maximum = max(maximum, l[i][j])
+            # progress bar
+            if (x%(SIZE*SIZE/10) == 0):
+                print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
+            x+=1
             
+            # top left
+            if i == 0 and j == 0:
+                l3[i][j] = getVal()
+
+            #edges
+
+            # top row
+            elif i > 0 and j == 0:
+                l3[i][j] = l3[i][j-1] + getVar()
+            else:
+                #print(l[i-1][j-1], l[i-1][j], l[i-1][j+1])
+                if i < SIZE-1: 
+                    #l[i][j] = (l[i-1][j-1] + l[i-1][j] + l[i-1][j+1] + l[i][j-1])/4 + getVar()
+                    l3[i][j] = (l3[i-1][j-1] + l3[i][j-1] + l3[i+1][j-1])/3 + getVar()
+
+                elif i == SIZE-1: # wrap around on right edge (0 does it for us with -1)
+                    l3[i][j] = (l3[i-1][j-1] + l3[i][j-1] + l3[0][j-1])/3 + getVar()
+
+    #l4
+    for i in range(SIZE):
+        if i==0:
+            if not l4 in PLANES:
+                break
+            y+=1
+            print("\nPopulating discrete plane("+str(y)+"/"+str(len(PLANES))+")",end="...")
+            x=0
+
+        for j in range(SIZE-1,-1,-1):
+            # progress bar
+            if (x%(SIZE*SIZE/10) == 0):
+                print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
+            x+=1
+
+            # top corner
+            if i == 0 and j == SIZE-1:
+                l4[i][j] = getVal()
+
+            #edges
+            elif i == 0 and j < SIZE-1:
+                l4[i][j] = l4[i][j+1] + getVar()
+            elif i > 0 and j == SIZE-1:
+                l4[i][j] = l4[i-1][j] + getVar()
+
+            # everything else  
+            else:
+                l4[i][j] = ((l4[i-1][j] + l4[i][j+1])/2 + getVar())
+
+    for i in range(SIZE):
+        if i==0:
+            if len(PLANES)==1:
+                l=PLANES[0]
+                break
+            print("\nCombining planes",end="...")
+            x=0
+
+        for j in range(SIZE):
+            if (x%(SIZE*SIZE/10) == 0):
+                print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
+            x+=1
+            if l1:
+                l[i][j] += l1[i][j]
+            if l2:
+                l[i][j] += l2[i][j]
+            if l3:
+                l[i][j] += l3[i][j]
+            if l4:
+                l[i][j] += l4[i][j]
+            l[i][j] /= len(PLANES)
+    print("Done.")
+    
+    """
+    print("Adding features",end="...")
+    features=[[random.randint(0,SIZE),random.randint(0,SIZE)] for i in range(5)]
+
+    x=0 # progress
+
+    for i in range(SIZE):
+        for j in range(SIZE):
+            # progress bar
+            if (x%(SIZE*SIZE/10) == 0):
+                print(str(int(x/(SIZE*SIZE)*100))+"%",end="...")
+
+            x += 1
+                
+            for f in features:
+                size = 500
+                
+                distance=((i-f[0])**2+(j-f[1])**2)**.5
+
+                if distance==0 or distance > size:
+                    continue
+                
+                num = (size-distance)/size# 0-1
+                m=10 # peak height
+                
+                if f[0]%2==0:
+                    l[i][j]+=m*num
+                else:
+                    l[i][j]-=m*num
+
+    """
+    
+    # stats
+    minimum = GLOBALMIN[2] = sorted(sorted(l, key=lambda y:min(y))[0])[0]
+    maximum = sorted(sorted(l, key=lambda y:max(y))[-1])[-1]
+    for line, row in enumerate(l):
+        if minimum in row:
+            GLOBALMIN[0]=line
+            GLOBALMIN[1]=row.index(minimum)
+            break                
+
     print("Done.")
 
 # Populates window with data points, returns win object
@@ -189,6 +362,7 @@ def makeWin():
     #### COLORS
     #http://www.science.smith.edu/dftwiki/images/thumb/3/3d/TkInterColorCharts.png/700px-TkInterColorCharts.png
     COLORS_BLUEISH=[
+            "Yellow",
             "SteelBlue1",
             "SteelBlue2",
             "SteelBlue3",
@@ -219,6 +393,8 @@ def makeWin():
                  "#777777",
                  "#888888",
                  "#999999"]
+    
+    COLORS_BW=["White","Black"]
 
     COLORS_MORDOR=["#000000",
                  "#FF0000",
@@ -232,7 +408,7 @@ def makeWin():
                    "#FF00FF"]
 
     
-    COLORS=COLORS_BLUEISH
+    COLORS=COLORS_NEBULA
     GRADIENT=True
 
     # Get color codes in dec
@@ -246,27 +422,83 @@ def makeWin():
 
     ## ANIMATIONS
     # lambdas that sort in place
-    ANIMATIONS={"VALUE" : lambda g: g.sort(key=lambda x: l[x[0]][x[1]],
-                       reverse=random.choice([True,False])),
+    ANIMATIONS={"VALUE" : lambda g: g.sort(key=lambda x: l[x[0]][x[1]]),
+                "VALUE_REV" : lambda g: g.sort(key=lambda x: l[x[0]][x[1]],
+                       reverse=True),
                 "RANDOM" : lambda g: g.sort(key=lambda x: random.uniform(0,1)),
-                "SWIPE" : lambda g: g.sort(key=lambda x: x[0]+x[1],
-                       reverse=random.choice([True,False])),
-                "CROSS" : lambda g: g.sort(key=lambda x: x[random.choice([0,1])],
-                       reverse=random.choice([True,False])),
+                "SWIPE" : lambda g: g.sort(key=lambda x: x[0]+x[1]),
+                "SWIPE_REV" : lambda g: g.sort(key=lambda x: x[0]+x[1],
+                       reverse=True),
+                "CROSS" : lambda g: g.sort(key=lambda x:  \
+                                           x[random.choice([0,1])]),
+                "CROSS_REV" : lambda g: g.sort(key=lambda x:  \
+                                               x[random.choice([0,1])],reverse=True),
+                "CURTIAN" : lambda g: g.sort(key=lambda x: x[1]),
+                "CURTIAN_REV" : lambda g: g.sort(key=lambda x: x[1], reverse=True),
                 "REVEAL" : lambda g: g.sort(key=lambda x:  \
+                                            abs(x[0]-(SIZE//2)+x[1]-(SIZE//2))),
+                "REVEAL_REV" : lambda g: g.sort(key=lambda x:  \
                                             abs(x[0]-SIZE//2+x[1]-SIZE//2),
-                                          reverse=random.choice([True,False])),
+                                          reverse=True),
                 "RADIAL" : lambda g: g.sort(key=lambda x:  \
+                                            ((x[0]-SIZE//2)**2+(x[1]-SIZE//2)**2)**1/2),
+                "RADIAL_REV" : lambda g: g.sort(key=lambda x: \
                                             ((x[0]-SIZE//2)**2+(x[1]-SIZE//2)**2)**1/2,
-                                          reverse=random.choice([True,False]))}
-
+                                          reverse=True),
+                "REV" : lambda g: g.sort(key=lambda x:x, reverse=True),
+                "DEFAULT" : lambda g: g.sort(key=lambda x:x)}
+########################## A N I M A T I O N    P R E S E T S ###############################
+######### Zig Zag
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE="CURTIAN"
+#    CHUNKS=100
+#    SHUFFLE_CHUNKS=False
+#    anim_list=["SWIPE","SWIPE_REV"]*(CHUNKS//2+1)
+######### Patchwork
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE="CROSS"
+#    CHUNKS=20
+#    SHUFFLE_CHUNKS=True
+#    anim_list=["SWIPE","SWIPE_REV"]*(CHUNKS//2+1)
+######### Bars!
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE="REVEAL"
+#    CHUNKS=10
+#    SHUFFLE_CHUNKS=True
+#    anim_list=["DEFAULT","REV"]*(CHUNKS//2+1)
+######### Spotlight
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE="RANDOM"
+#    CHUNKS=19
+#    SHUFFLE_CHUNKS=False
+#    anim_list=["RADIAL_REV","RADIAL"]*(CHUNKS//2+1)
+######### Funky Circles
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE="RADIAL_REV"
+#    CHUNKS=10
+#    SHUFFLE_CHUNKS=False
+#    anim_list=["RADIAL"]*(CHUNKS-1)+["RANDOM"]
+######### Scanner
     PRESORT=True # sort the points before breaking them up
-    PRESORT_TYPE="VALUE" # type of sort
-    CHUNKS=6 # different animations to do
-    
-    # order of animations
-    anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)] 
-    anim_list=["RADIAL"]*CHUNKS#["SWIPE","VALUE","RANDOM","RANDOM"]
+    PRESORT_TYPE="VALUE"
+    CHUNKS=20
+    SHUFFLE_CHUNKS=False
+    anim_list=["CROSS","CROSS_REV"]*(CHUNKS//2+1)
+######### Classic
+#    PRESORT=False # sort the points before breaking them up
+#    PRESORT_TYPE="DEFAULT"
+#    CHUNKS=1
+#    SHUFFLE_CHUNKS=False
+#    anim_list=["VALUE"]
+######### RANDOM
+#    PRESORT=True # sort the points before breaking them up
+#    PRESORT_TYPE=random.choice(list(ANIMATIONS.keys()))
+#    CHUNKS=random.randint(1,30)
+#    SHUFFLE_CHUNKS=True
+#    anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)]
+
+    print("Prepping points",end="...")
+
     # sort points
     points=[]
     chunks=[]
@@ -281,27 +513,18 @@ def makeWin():
     # divide into chunks and set order
     for i in range(CHUNKS):
         chunks.append(points[i*len(points)//CHUNKS:(i+1)*len(points)//CHUNKS])
-    for chunk in chunks:
-        ANIMATIONS[anim_list.pop()](chunk)
+
+    if SHUFFLE_CHUNKS:
+        random.shuffle(chunks)
         
-#old method
-#        if anim=="VALUE":
-#            chunk.sort(key=lambda x: l[x[0]][x[1]],
-#                       reverse=random.choice([True,False]))
-#        elif anim=="RANDOM":
-#            random.shuffle(chunk)
-#        elif anim=="SWIPE":
-#            chunk.sort(key=lambda x: x[0]+x[1],
-#                       reverse=random.choice([True,False]))
-#        elif anim=="CROSS":
-#            chunk.sort(key=lambda x: x[random.choice([0,1])],
-#                       reverse=random.choice([True,False]))
+    for chunk in chunks:
+        ANIMATIONS[anim_list.pop(0)](chunk)
 
     points=[]
     for chunk in chunks:
         points += chunk
         
-    print("Drawing discrete plane",end="...")
+    print("\nDrawing discrete plane",end="...")
     x=0
     
     for p in points:
@@ -333,8 +556,8 @@ def makeWin():
                     cellVal /= sample**2
                     
                 # 0 to 1 (doesn't touch 1)
-                num=(cellVal-minimum)/(maximum-minimum+0.001)
-                
+                num=(cellVal-minimum)/(maximum-minimum+1)
+
                 # num=str(int((l[i][j]-minimum)/((maximum-minimum))*100))[:1]
                 
                 if not GRADIENT:
@@ -346,9 +569,13 @@ def makeWin():
                 elif GRADIENT:
 
                     num *= (len(COLORS)-1)
-
+                    
                     color1=COLORS[int(num)]
-                    color2=COLORS[int(num)+1]
+                    try:
+                        color2=COLORS[int(num)+1]
+                    except IndexError: # in case somehow num = 1
+                        print(num)
+                        print(maximum,minimum,cellVal)
 
                     # components
                     r1=color1[0]
@@ -403,7 +630,7 @@ def fireworkSearch(win):
                   "old lace",
                   "red",
                   "blue",
-                  "yellow"]    
+                  "magenta"]    
     COLORS_BRIGHT=["white",
                    "yellow",
                    "magenta",
@@ -412,16 +639,16 @@ def fireworkSearch(win):
                    "grey",
                    "pink"]
                    
-    CRAWLER_COLORS=COLORS_WHITE
+    CRAWLER_COLORS=COLORS_BRIGHT
 
     # P H A S E 1
     print("PHASE1")
     phase1=[]
 
     # DISTRIBUTE X CRAWLERS WITH Y GREED FOR Z STEPS
-    X=100
+    X=500
     Y=100
-    Z=10
+    Z=1
     
     for i in range(X):
         c = Crawler(Y, random.randint(0,SIZE-1), random.randint(0,SIZE-1))
@@ -430,17 +657,18 @@ def fireworkSearch(win):
     for i in range(Z):
         for c in phase1:
             c.update()
-            win.plot(c.x,c.y,CRAWLER_COLORS[0])
+            if i%2==0:
+                win.plot(c.x,c.y,CRAWLER_COLORS[0])
 
     # P H A S E 2
     print("PHASE2") 
     phase2=[]
 
     # PICK TOP X CRAWLERS, DISTRIBUTE Y CRAWLERS WITH Z GREED AT THEIR LOCATIONS RUNNING Q TIMES
-    X=3
+    X=4
     Y=2
-    Z=2
-    Q=100
+    Z=4
+    Q=500
 
     phase1 = sorted(phase1, key=lambda x: x.value)[:X]
 
@@ -452,17 +680,18 @@ def fireworkSearch(win):
     for i in range(Q):
         for c in phase2:
             c.update()
-            win.plot(c.x,c.y,CRAWLER_COLORS[1])
+            if i%2==0:
+                win.plot(c.x,c.y,CRAWLER_COLORS[1])
 
     # P H A S E 3
     print("PHASE3")
     phase3=[]
 
     # PICK TOP X CRAWLERS, DISTRIBUTE Y CRAWLERS WITH Z GREED AT THEIR LOCATIONS RUNNING Q TIMES
-    X=3
-    Y=2
+    X=2
+    Y=1
     Z=10
-    Q=100
+    Q=500
 
     phase2 = sorted(phase2, key=lambda x: x.value)[:X]
 
@@ -474,7 +703,8 @@ def fireworkSearch(win):
     for i in range(Q):
         for c in phase3:
             c.update()
-            win.plot(c.x,c.y,CRAWLER_COLORS[2])
+            if i%2==0:
+                win.plot(c.x,c.y,CRAWLER_COLORS[2])
 
     print("FINAL PHASE")
 
@@ -482,9 +712,10 @@ def fireworkSearch(win):
     climber = min(phase3, key=lambda x: x.value)
     climber.greed = 1000
 
-    for i in range(500):
+    for i in range(100):
         climber.update()
-        win.plot(climber.x,climber.y,CRAWLER_COLORS[3])
+        if i%2==0:
+            win.plot(climber.x,climber.y,CRAWLER_COLORS[3])
 
     print("DONE")
 
@@ -495,21 +726,23 @@ def fireworkSearch(win):
     #crawler_hist[climber.x][climber.y] = -1 # mark finish spot
 
     finish = Circle(Point(climber.x,climber.y),5)
-    globalmin = Circle(Point(GLOBALMIN[0],GLOBALMIN[1]),5)
-    best = Circle(Point(BEST[0],BEST[1]),5)
+    globalmin = Circle(Point(GLOBALMIN[0],GLOBALMIN[1]),4)
+    best = Circle(Point(BEST[0],BEST[1]),3)
 
     finish.setFill(CRAWLER_COLORS[4])
     globalmin.setFill(CRAWLER_COLORS[5])
     best.setFill(CRAWLER_COLORS[6])
-
+    finish.setOutline(CRAWLER_COLORS[4])
+    globalmin.setOutline(CRAWLER_COLORS[5])
+    best.setOutline(CRAWLER_COLORS[6])
+    
     finish.draw(win)
     globalmin.draw(win)
     best.draw(win)
 
-    if not BEST[2] == Point(climber.x,climber.y): # best covers it
-        print(CRAWLER_COLORS[4].upper(), "DOT: Final crawler endpoint")
-    if not BEST[2] == GLOBALMIN[2]: # best covers it
-        print(CRAWLER_COLORS[5].upper(), "DOT: Global minimum")
+
+    print(CRAWLER_COLORS[4].upper(), "DOT: Final crawler endpoint")
+    print(CRAWLER_COLORS[5].upper(), "DOT: Global minimum")
     print(CRAWLER_COLORS[6].upper(), "DOT: Best solution found")
 
     #for i in range(len(crawler_hist)):
@@ -519,7 +752,7 @@ def fireworkSearch(win):
     #        elif crawler_hist[i][j] > 0:
     #            win.plot(i,j,"red3")
 
-    print(SEARCH,"points searched,",str((SEARCH/(SIZE*SIZE))*100)[:3]+"% of points.")
+    print(SEARCH,"points searched,",str(round((SEARCH/(SIZE*SIZE))*100,3))+"% of points.")
     print("Done.")
 
 
