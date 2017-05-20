@@ -261,12 +261,12 @@ def makeWin():
                                           reverse=random.choice([True,False]))}
 
     PRESORT=True # sort the points before breaking them up
-    PRESORT_TYPE="CROSS" # type of sort
+    PRESORT_TYPE="VALUE" # type of sort
     CHUNKS=6 # different animations to do
     
     # order of animations
     anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)] 
-    anim_list=["REVEAL"]*CHUNKS#["SWIPE","VALUE","RANDOM","RANDOM"]
+    anim_list=["RADIAL"]*CHUNKS#["SWIPE","VALUE","RANDOM","RANDOM"]
     # sort points
     points=[]
     chunks=[]
@@ -419,15 +419,14 @@ def fireworkSearch(win):
     phase1=[]
 
     # DISTRIBUTE X CRAWLERS WITH Y GREED FOR Z STEPS
-    X=300
-    Y=10
-    Z=20
+    X=100
+    Y=100
+    Z=10
     
     for i in range(X):
         c = Crawler(Y, random.randint(0,SIZE-1), random.randint(0,SIZE-1))
         phase1.append(c)
 
-    # RUN CRAWLERS Z TIMES
     for i in range(Z):
         for c in phase1:
             c.update()
@@ -450,7 +449,6 @@ def fireworkSearch(win):
             c = Crawler(Z, i.x, i.y)
             phase2.append(c)
 
-    # RUN CRAWLERS Q TIMES
     for i in range(Q):
         for c in phase2:
             c.update()
@@ -473,7 +471,6 @@ def fireworkSearch(win):
             c = Crawler(Z, i.x, i.y)
             phase3.append(c)
             
-    # RUN CRAWLERS Q TIMES
     for i in range(Q):
         for c in phase3:
             c.update()
@@ -512,8 +509,8 @@ def fireworkSearch(win):
     if not BEST[2] == Point(climber.x,climber.y): # best covers it
         print(CRAWLER_COLORS[4].upper(), "DOT: Final crawler endpoint")
     if not BEST[2] == GLOBALMIN[2]: # best covers it
-        print(CRAWLER_COLORS[6].upper(), "DOT: Global minimum")
-    print(CRAWLER_COLORS[5].upper(), "DOT: Best solution found")
+        print(CRAWLER_COLORS[5].upper(), "DOT: Global minimum")
+    print(CRAWLER_COLORS[6].upper(), "DOT: Best solution found")
 
     #for i in range(len(crawler_hist)):
     #    for j in range(len(crawler_hist[i])):
