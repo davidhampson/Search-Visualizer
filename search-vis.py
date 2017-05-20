@@ -232,7 +232,7 @@ def makeWin():
                    "#FF00FF"]
 
     
-    COLORS=COLORS_MORDOR
+    COLORS=COLORS_BLUEISH
     GRADIENT=True
 
     # Get color codes in dec
@@ -262,7 +262,7 @@ def makeWin():
 
     PRESORT=True # sort the points before breaking them up
     PRESORT_TYPE="RADIAL" # type of sort
-    CHUNKS=5 # different animations to do
+    CHUNKS=4 # different animations to do
     
     # order of animations
     anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)] 
@@ -338,7 +338,9 @@ def makeWin():
                 
                 if not GRADIENT:
                     num *=len(COLORS)
-                    color=COLORS[int(num)]
+                    color="#{0:02x}{1:02x}{2:02x}".format(int(COLORS[int(num)][0]),
+                                                          int(COLORS[int(num)][1]),
+                                                          int(COLORS[int(num)][2]))
                     
                 elif GRADIENT:
 
@@ -520,7 +522,6 @@ def fireworkSearch(win):
     #            win.plot(i,j,"red3")
 
     print(SEARCH,"points searched,",str((SEARCH/(SIZE*SIZE))*100)[:3]+"% of points.")
-    print(crawler_hist[0][0])
     print("Done.")
 
 
