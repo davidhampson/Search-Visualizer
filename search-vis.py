@@ -261,12 +261,12 @@ def makeWin():
                                           reverse=random.choice([True,False]))}
 
     PRESORT=True # sort the points before breaking them up
-    PRESORT_TYPE="RADIAL" # type of sort
-    CHUNKS=4 # different animations to do
+    PRESORT_TYPE="CROSS" # type of sort
+    CHUNKS=6 # different animations to do
     
     # order of animations
     anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)] 
-    #anim_list=["RADIAL"]*CHUNKS#["SWIPE","VALUE","RANDOM","RANDOM"]
+    anim_list=["REVEAL"]*CHUNKS#["SWIPE","VALUE","RANDOM","RANDOM"]
     # sort points
     points=[]
     chunks=[]
@@ -324,7 +324,8 @@ def makeWin():
 
                     # make sure we don't go off the edge
                     sample=min(SIZE-i-1,SIZE-j-1,RESOLUTION)
-                        
+                    sample=max(sample,1) # or divide by 0
+                    
                     for q in range(sample):
                         for w in range(sample):
                             cellVal += l[i+q][j+w]
