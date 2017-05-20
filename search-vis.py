@@ -19,7 +19,7 @@ BEST=[0,0,99999999] # best found [x,y,v]
 
 
 def getVal(): # top left cell
-    return 0
+    return random.uniform(0,10)
 
 
 def getVar(variant): # variant in cells
@@ -128,24 +128,17 @@ def makeData(): # generate discrete SIZExSIZE floating point array
             print("Invalid seed.")
 
     # create arrays
-    print("Creating empty matrix (1 of 2)",end="...")
+    
+    print("Creating empty matrices",end="...")
 
     for i in range(SIZE):
         row = []
         for i in range(SIZE):
             row.append(0)
-        l.append(row)
+        l.append(row[:])
+        crawler_hist.append(row[:])
     print("Done.")
 
-
-    print("Creating empty matrix (2 of 2)",end="...")
-
-    for i in range(SIZE):
-        row = []
-        for i in range(SIZE):
-            row.append(0)
-        crawler_hist.append(row)
-    print("Done.")
 
 
     # populate
@@ -193,8 +186,7 @@ def makeWin():
 
     win = GraphWin("Search-Visualizer",WINSIZE,WINSIZE)
 
-    print("Drawing discrete plane",end="...")
-    x=0
+    #### COLORS
     #http://www.science.smith.edu/dftwiki/images/thumb/3/3d/TkInterColorCharts.png/700px-TkInterColorCharts.png
     COLORS_BLUEISH=[
             "SteelBlue1",
@@ -242,21 +234,75 @@ def makeWin():
     
     COLORS=COLORS_MORDOR
     GRADIENT=True
-       
-    # sort points
-    points=[]
-    for i in range(SIZE):
-        for j in range(SIZE):
-            points.append([i,j])
-            
-    points.sort(key=lambda x: l[x[0]][x[1]])
-    
+
     # Get color codes in dec
     c_CONV=65535/255
     COLORS=list(map(lambda x: [win.winfo_rgb(x)[0]//c_CONV,
                                win.winfo_rgb(x)[1]//c_CONV,
                                win.winfo_rgb(x)[2]//c_CONV],
                     COLORS))
+    
+    #####
+
+    ## ANIMATIONS
+    # lambdas that sort in place
+    ANIMATIONS={"VALUE" : lambda g: g.sort(key=lambda x: l[x[0]][x[1]],
+                       reverse=random.choice([True,False])),
+                "RANDOM" : lambda g: g.sort(key=lambda x: random.uniform(0,1)),
+                "SWIPE" : lambda g: g.sort(key=lambda x: x[0]+x[1],
+                       reverse=random.choice([True,False])),
+                "CROSS" : lambda g: g.sort(key=lambda x: x[random.choice([0,1])],
+                       reverse=random.choice([True,False])),
+                "REVEAL" : lambda g: g.sort(key=lambda x:  \
+                                            abs(x[0]-SIZE//2+x[1]-SIZE//2),
+                                          reverse=random.choice([True,False])),
+                "RADIAL" : lambda g: g.sort(key=lambda x:  \
+                                            ((x[0]-SIZE//2)**2+(x[1]-SIZE//2)**2)**1/2,
+                                          reverse=random.choice([True,False]))}
+
+    PRESORT=True # sort the points before breaking them up
+    PRESORT_TYPE="RADIAL" # type of sort
+    CHUNKS=5 # different animations to do
+    
+    # order of animations
+    anim_list=[random.choice(list(ANIMATIONS.keys())) for i in range(CHUNKS)] 
+    #anim_list=["RADIAL"]*CHUNKS#["SWIPE","VALUE","RANDOM","RANDOM"]
+    # sort points
+    points=[]
+    chunks=[]
+
+    # get initial list
+    for i in range(SIZE):
+        for j in range(SIZE):
+            points.append([i,j])
+    if PRESORT:
+        ANIMATIONS[PRESORT_TYPE](points)
+
+    # divide into chunks and set order
+    for i in range(CHUNKS):
+        chunks.append(points[i*len(points)//CHUNKS:(i+1)*len(points)//CHUNKS])
+    for chunk in chunks:
+        ANIMATIONS[anim_list.pop()](chunk)
+        
+#old method
+#        if anim=="VALUE":
+#            chunk.sort(key=lambda x: l[x[0]][x[1]],
+#                       reverse=random.choice([True,False]))
+#        elif anim=="RANDOM":
+#            random.shuffle(chunk)
+#        elif anim=="SWIPE":
+#            chunk.sort(key=lambda x: x[0]+x[1],
+#                       reverse=random.choice([True,False]))
+#        elif anim=="CROSS":
+#            chunk.sort(key=lambda x: x[random.choice([0,1])],
+#                       reverse=random.choice([True,False]))
+
+    points=[]
+    for chunk in chunks:
+        points += chunk
+        
+    print("Drawing discrete plane",end="...")
+    x=0
     
     for p in points:
     #for i in range(len(l)):
@@ -345,9 +391,9 @@ def fireworkSearch(win):
     #   PHASE 2
     #   PHASE 3
     #   HILL CLIMBER
-    #   Final
-    #   Best
-    #   Global
+    #   FINAL CRAWLER LOC
+    #   GLOBAL BEST
+    #   BEST FOUND
     COLORS_WHITE=["white",
                   "lemon chiffon",
                   "papaya whip",
@@ -460,10 +506,11 @@ def fireworkSearch(win):
     globalmin.draw(win)
     best.draw(win)
 
-    print(CRAWLER_COLORS[4].upper(), "DOT: Final crawler endpoint")
-    print(CRAWLER_COLORS[5].upper(), "DOT: Best solution found")
+    if not BEST[2] == Point(climber.x,climber.y): # best covers it
+        print(CRAWLER_COLORS[4].upper(), "DOT: Final crawler endpoint")
     if not BEST[2] == GLOBALMIN[2]: # best covers it
         print(CRAWLER_COLORS[6].upper(), "DOT: Global minimum")
+    print(CRAWLER_COLORS[5].upper(), "DOT: Best solution found")
 
     #for i in range(len(crawler_hist)):
     #    for j in range(len(crawler_hist[i])):
@@ -473,7 +520,7 @@ def fireworkSearch(win):
     #            win.plot(i,j,"red3")
 
     print(SEARCH,"points searched,",str((SEARCH/(SIZE*SIZE))*100)[:3]+"% of points.")
-
+    print(crawler_hist[0][0])
     print("Done.")
 
 
@@ -509,8 +556,7 @@ def writeToFile():
                 print(str(x/(SIZE*SIZE)*50)+"%")
                 
         file.write("\n")
-    print("done.")
-
+    print("Done.")
     file.close()
 
 def main():
