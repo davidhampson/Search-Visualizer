@@ -25,3 +25,7 @@ All three settings use the Tourmaline seed on a 128 × 128 grid. Each run takes 
 | Wide | 16 | 32 | 125 |
 
 Balanced reproduces the branch allocation of David Hampson's 2017 search. On this seed, all three finish at the terrain minimum, approximately −15.74465 at (37, 11). Compare the trails midway through a run to see how they get there.
+
+## Finish report
+
+Coverage is the percentage of grid cells visited at the start of at least one move, where the crawler records its current score. Revisiting a cell adds no coverage. The denominator includes all 16,384 cells. For example, Balanced visits 1,629 distinct cells in 5,600 moves, giving 9.9% coverage. The optimality gap is the best recorded score minus the true minimum over the entire unsmoothed terrain, in objective-score units. Equal scores give an exact match, including a tie at another coordinate. Reproduce the example with `python search-vis.py --headless --breadth balanced` or finish a Balanced run in the browser.

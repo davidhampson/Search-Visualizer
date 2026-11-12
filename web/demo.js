@@ -83,6 +83,17 @@ function drawTerrain(time) {
     get('stats').textContent='Layer '+(layer+1)+' of 4';
   }
 }
+function prepareReport(run) {
+  // Count the cells scored for the best-so-far record, once per grid coordinate.
+  const distinct = new Set(run.visits.map(visit => visit.from)).size;
+  const total = run.field.length;
+  const best = run.field[run.bestIndex], optimum = run.field[run.globalIndex];
+  const gap = best - optimum;
+  get('coverage').textContent = (100 * distinct / total).toFixed(1) + '%';
+  get('cell-count').textContent = distinct.toLocaleString() + ' of ' + total.toLocaleString() + ' cells';
+  get('gap').textContent = gap === 0 ? 'Exact match' : '+' + Number(gap.toPrecision(3)) + (gap === 1 ? ' point' : ' points');
+  get('comparison').textContent = 'Best ' + best.toFixed(3) + ' · Optimum ' + optimum.toFixed(3);
+}
 function show(target){
   if(!result)return;
   if(target<cursor || target===0){ink.width=canvas.width;cursor=0;stage=-1;heads.clear();}
@@ -122,6 +133,7 @@ function show(target){
   const score=lastVisit?' · Best '+result.field[lastVisit.bestIndex].toFixed(2):'';
   get('stats').textContent=target.toLocaleString()+' / '+result.visits.length.toLocaleString()+' moves'+score;
   get('scrub').value=target;
+  get('report').hidden=!done;
   if(done)stop();
 }
 function stop(){cancelAnimationFrame(animationFrame);playing=false;get('play').textContent=cursor===result?.visits.length?'Replay':'Play';}
@@ -153,6 +165,7 @@ function play(){
   playing=true;last=performance.now();accum=0;get('play').textContent='Pause';animationFrame=requestAnimationFrame(tick);
 }
 async function initialize(){
+  get('report').hidden=true;
   const token=++generation;stop();get('play').disabled=true;get('scrub').disabled=true;
   const breadth=document.querySelector('[name=breadth]:checked').value;
   const crawlers=breadthPlans[breadth].starts*2;
@@ -162,6 +175,7 @@ async function initialize(){
     if(token!==generation)return;
     const first=!result;
     result=run;
+    prepareReport(run);
     if(first){surface=terrainLayers(run).at(-1);points=projectTerrain(run);}
     buildTime=first && !reducedMotion.matches?0:buildMs;
     get('scrub').max=run.visits.length;get('play').disabled=false;get('scrub').disabled=false;

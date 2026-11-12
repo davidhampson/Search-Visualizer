@@ -124,7 +124,11 @@ def describe(result):
     distinct = sum(count > 0 for row in result.visits for count in row)
     best, x, y = result.best
     minimum, mx, my = result.minimum
-    return (f"{visits:,} visits | {distinct:,} distinct cells | Best {best:.4f} at ({x}, {y}) | "
+    total = sum(map(len, result.terrain))
+    gap = best - minimum
+    outcome = "Exact match" if gap == 0 else f"Gap to optimum {gap:.3g}"
+    return (f"{visits:,} visits | {distinct / total:.1%} of terrain ({distinct:,}/{total:,} cells) | "
+            f"{outcome} | Best {best:.4f} at ({x}, {y}) | "
             f"Terrain minimum {minimum:.4f} at ({mx}, {my})")
 
 
